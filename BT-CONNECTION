@@ -1,0 +1,14 @@
+//CODE
+// BLUETOOTH CONNECTION: Through Simulated RX and TX
+void setup() {
+  Serial.begin(9600);
+  Serial.println("BT Receiver Ready");
+}
+
+void loop() {
+  if (Serial.available()) {
+    String received = Serial.readStringUntil('\n');
+    Serial.print("Received via BT: ");
+    Serial.println(received);
+  }
+}
