@@ -1,0 +1,26 @@
+// C++ code
+//GSM CONNECTION
+void setup() {
+  Serial.begin(9600);
+  randomSeed(analogRead(0));
+  Serial.println("GSM Module Simulation Ready");
+  delay(2000);
+}
+
+void loop() {
+  int humidity = random(30, 70);  // Range like Arduino 1
+  float temperature = 28.0 + random(-10, 10) / 10.0; 
+  // Simulate sending SMS
+  Serial.println("Sending SMS...");
+  Serial.print("Message: Humidity=");
+  Serial.print(humidity);
+  Serial.print("% Temp=");
+  Serial.print(temperature, 1);
+  Serial.println("C");
+  Serial.println("SMS Sent Successfully");
+
+  delay(2000); 
+}
+
+
+
