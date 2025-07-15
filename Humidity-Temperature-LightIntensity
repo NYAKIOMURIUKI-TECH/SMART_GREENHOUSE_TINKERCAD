@@ -1,0 +1,95 @@
+ARDUINO CONNECTION ONE: Measurement of Humidity and Temperature
+It has the following components
+	  1. 1 Arduino
+    2. An LCD
+    3. 2 leds(alert systems)
+    4. Potentiometer(humidity sensor- modelled)
+    5. Resistors and wires(red-positive, black-negative, colored-connections)
+    6. DC Motor(Water pump- modelled)
+    7. Photoresistor- for Night and Day simulation to adjust greenhouse thresholds
+    8. Transistor(DC motor regulator)
+    
+The components work together to collect data of temperature and humidity in a farm that will be transmitted to via bluetooth and a GSM to the other arduino.
+*/
+
+//ARDUINO 1
+#include <LiquidCrystal.h>
+#include <SoftwareSerial.h>
+
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
+const int TEMP_PIN = A0;
+const int LDR_PIN = A1;
+const int RED_LED = 9;
+const int GREEN_LED = 8;
+const int PUMP_PIN = 10;
+//GSM uses SoftwareSerial on pins 6 (TX) and 7 (RX)
+
+SoftwareSerial GSMserial(6, 7);  // TX, RX
+void setup() {
+  lcd.begin(16, 2);
+  Serial.begin(9600);       // For BT via Hardware Serial (D0, D1)
+  GSMserial.begin(9600);    // For GSM
+  randomSeed(analogRead(0));
+  
+  pinMode(RED_LED, OUTPUT);
+  pinMode(GREEN_LED, OUTPUT);
+  pinMode(PUMP_PIN, OUTPUT);
+
+  lcd.print("Humidity & Temp");
+  delay(2000);
+}
+
+void loop() {
+  // Read TMP36 Temperature
+  int rawValue = analogRead(TEMP_PIN);
+  float voltage = rawValue * (5.0 / 1023.0);
+  float temperature = (voltage - 0.5) * 100.0;
+
+  // Simulate Humidity
+  int humidity = random(30, 70);
+  
+  // Light (LDR)
+  int lightValue = analogRead(LDR_PIN);
+  // Threshold for night
+  bool isNight = (lightValue < 500);
+  Serial.print("LDR Raw Value: ");
+	Serial.println(lightValue);
+  
+  int humidityThreshold = isNight ? 30 : 40;
+
+  // Display on LCD
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Hum: ");
+  lcd.print(humidity);
+  lcd.print("%");
+
+  lcd.setCursor(0, 1);
+  lcd.print("Temp: ");
+  lcd.print(temperature, 1);
+  lcd.print("C");
+
+  // Prepare message
+	String mode = isNight ? "Night" : "Day";
+	String message = "Mode:" + mode + " Hum:" + String(humidity) + "% Temp:" + String(temperature, 1) + "C";
+  
+  // Send to BT (via Hardware Serial)
+  Serial.println(message);
+
+  // Send to GSM (via SoftwareSerial)
+  GSMserial.println(message);
+
+  // LED Status Logic
+  digitalWrite(GREEN_LED, humidity <= humidityThreshold ? HIGH : LOW);
+  digitalWrite(RED_LED, temperature > 27 ? HIGH : LOW);
+  
+  // Pump Control: if humidity < 40%, turn pump ON
+  if (humidity < humidityThreshold) {
+    digitalWrite(PUMP_PIN, HIGH);  
+  } else {
+    digitalWrite(PUMP_PIN, LOW); 
+  }
+
+  delay(2000);
+}
